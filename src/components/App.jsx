@@ -1,83 +1,74 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ImageGalleryArr } from './ImageGallery/ImageGallery';
 import { Loader } from './Loader/Loader';
 import { Button } from 'components/Button/Button';
 import { Modal } from './Modal/Modal';
 import { Searchbar } from './Searchbar/Searchbar';
 import { fetchImages } from './Services/getPhoto';
-import css from './App.module.css'
+import css from './App.module.css';
 
-export class App extends Component {
-  state = {
-    images: [],
-    searchQuery: '',
-    page: 1,
-    largeImage: '',
-    showModal: false,
-    isLoading: false,
-    isActiveBtn: false,
-    error: null,
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [largeImage, setLargeImage] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isActiveBtn, setIsActiveBtn] = useState(false);
+  const [error, setError] = useState(null);
 
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.searchQuery !== this.state.searchQuery) this.getImg();
-  }
-
-
-  getImg = async () => {
-    const { searchQuery, page, images } = this.state;
-    this.setState({ isLoading: true, isActiveBtn: false });
-
-    try {
-      const { hits, totalHits } = await fetchImages(searchQuery, page);
-
-      this.setState(({ page, images }) => ({
-        images: [...images, ...hits],
-        page: page + 1,
-        isActiveBtn: true,
-      }));
-
-      if (images.length === totalHits) this.setState({ isActiveBtn: false });
-    } catch (error) {
-      this.setState({
-        error: 'sorry, the server is not responding, try again later',
-      });
-    } finally {
-      this.setState({ isLoading: false });
+  useEffect(() => {
+    if (searchQuery === '') {
+      return;
     }
+
+    const getImages = async () => {
+      setIsLoading(true);
+      setIsActiveBtn(false);
+
+      try {
+        const { hits } = await fetchImages(searchQuery, page);
+
+        setImages(state => [...state, ...hits]);
+        setIsActiveBtn(true);
+
+        if (hits.length === 0) setIsActiveBtn(false);
+      } catch (error) {
+        setError('sorry, the server is not responding, try again later');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getImages();
+  }, [searchQuery, page]);
+
+  const getLargeImg = largeImage => {
+    setLargeImage(largeImage);
+    setShowModal(true);
   };
 
-
-  getLargeImg = largeImage => {
-    this.setState({ largeImage, showModal: true });
+  const toggleModal = () => {
+    setShowModal(!showModal);
   };
 
-  toggleModal = () => {
-    this.setState({ showModal: !this.state.showModal });
+  const onFormSubmit = searchQuery => {
+    setImages([]);
+    setSearchQuery(searchQuery);
+    setPage(1);
+  };
+  const onClickLoadMore = () => {
+    setPage(s => s + 1);
   };
 
-
-
-  onFormSubmit = searchQuery => {
-    this.setState({ images: [], searchQuery, page: 1 });
-  };
-
-  render() {
-    const { showModal, isLoading, images, largeImage, error, isActiveBtn } =
-      this.state;
-
-    return (
-      <div className={css.mainDiv}>
-        <Searchbar onSubmit={this.onFormSubmit} />
-        {error}
-        <ImageGalleryArr items={images} onGetImages={this.getLargeImg} />
-        {isLoading && <Loader />}
-        {isActiveBtn && <Button onLoadMoreImg={() => this.getImg} />}
-        {showModal && (
-          <Modal largeImage={largeImage} onClick={this.toggleModal} />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className={css.mainDiv}>
+      <Searchbar onSubmit={onFormSubmit} />
+      {error}
+      <ImageGalleryArr items={images} onGetImages={getLargeImg} />
+      {isLoading && <Loader />}
+      {isActiveBtn && <Button onLoadMoreImg={() => onClickLoadMore} />}
+      {showModal && <Modal largeImage={largeImage} onClick={toggleModal} />}
+    </div>
+  );
+};
