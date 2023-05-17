@@ -1,0 +1,17 @@
+.loadBtn {
+  width: 300px;
+  background-color: rgb(16, 152, 243);
+  border: none;
+  border-radius: 20px;
+  padding: 20px;
+  color: white;
+  font-size: 25px;
+  margin: 10px;
+  cursor: pointer;
+  transition: transform 250ms;
+}
+.loadBtn:hover,
+.loadBtn:focus {
+  transition: transform 250ms cubic-bezier(0.3, 0, 0.4, 1);
+  transform: scale(1.1);
+}
